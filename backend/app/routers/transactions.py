@@ -1,5 +1,7 @@
 from fastapi import APIRouter, Depends, HTTPException, status
 from sqlalchemy.orm import Session
+from datetime import datetime
+from typing import Optional
 
 from app.database import get_db
 from app.models.user import User
@@ -34,16 +36,32 @@ def create_transaction(
 
 @router.get("/", response_model=list[TransactionOut])
 def list_transactions(
+    asset_name: Optional[str] = None,
+    transaction_type: Optional[TransactionType] = None,
+    start_date: Optional[datetime] = None,
+    end_date: Optional[datetime] = None,
+    favorites_only: bool = False,
     db: Session = Depends(get_db),
     current_user: User = Depends(get_current_user),
 ):
-    transactions = (
-        db.query(Transaction)
-        .filter(Transaction.user_id == current_user.id)
-        .order_by(Transaction.transaction_date.desc())
-        .all()
-    )
-    return transactions
+    query = db.query(Transaction).filter(Transaction.user_id == current_user.id)
+
+    if asset_name:
+        query = query.filter(Transaction.asset_name.ilike(f"%{asset_name}%"))
+
+    if transaction_type:
+        query = query.filter(Transaction.transaction_type == transaction_type)
+
+    if start_date:
+        query = query.filter(Transaction.transaction_date >= start_date)
+
+    if end_date:
+        query = query.filter(Transaction.transaction_date <= end_date)
+
+    if favorites_only:
+        query = query.filter(Transaction.is_favorite == 1)
+
+    return query.order_by(Transaction.transaction_date.desc()).all()
 
 
 @router.get("/{transaction_id}", response_model=TransactionOut)
