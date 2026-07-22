@@ -147,6 +147,7 @@ class _TransactionListScreenState extends State<TransactionListScreen> {
                         ),
                         isThreeLine: true,
                         trailing: Column(
+                          mainAxisSize: MainAxisSize.min,
                           mainAxisAlignment: MainAxisAlignment.center,
                           children: [
                             IconButton(
