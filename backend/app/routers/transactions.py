@@ -2,6 +2,7 @@ from fastapi import APIRouter, Depends, HTTPException, status
 from sqlalchemy.orm import Session
 from datetime import datetime
 from typing import Optional
+from collections import defaultdict
 
 from app.database import get_db
 from app.models.user import User
@@ -193,3 +194,46 @@ def get_portfolio_summary(
         "total_portfolio_value": round(total_portfolio_value, 2),
         "total_realized_profit_loss": round(total_profit_loss, 2),
     }
+
+@router.get("/summary/chart")
+def get_chart_data(
+    period: str = "daily",  # daily, weekly, monthly
+    db: Session = Depends(get_db),
+    current_user: User = Depends(get_current_user),
+):
+    if period not in ("daily", "weekly", "monthly"):
+        raise HTTPException(status_code=400, detail="period 'daily', 'weekly' veya 'monthly' olmalı.")
+
+    transactions = (
+        db.query(Transaction)
+        .filter(Transaction.user_id == current_user.id)
+        .order_by(Transaction.transaction_date.asc())
+        .all()
+    )
+
+    grouped: dict[str, dict] = defaultdict(lambda: {"buy_total": 0.0, "sell_total": 0.0})
+
+    for t in transactions:
+        if period == "daily":
+            key = t.transaction_date.strftime("%Y-%m-%d")
+        elif period == "weekly":
+            year, week, _ = t.transaction_date.isocalendar()
+            key = f"{year}-W{week:02d}"
+        else:  # monthly
+            key = t.transaction_date.strftime("%Y-%m")
+
+        if t.transaction_type == TransactionType.buy:
+            grouped[key]["buy_total"] += t.total_amount
+        else:
+            grouped[key]["sell_total"] += t.total_amount
+
+    result = [
+        {
+            "period": key,
+            "buy_total": round(data["buy_total"], 2),
+            "sell_total": round(data["sell_total"], 2),
+        }
+        for key, data in sorted(grouped.items())
+    ]
+
+    return {"period_type": period, "data": result}

@@ -6,4 +6,5 @@ class ApiConstants {
   static const String login = "$baseUrl/auth/login";
   static const String transactions = "$baseUrl/transactions/";
   static const String portfolioSummary = "$baseUrl/transactions/summary/portfolio";
+  static const String chartSummary = "$baseUrl/transactions/summary/chart";
 }
