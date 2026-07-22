@@ -30,11 +30,34 @@ class PortfolioAsset {
   }
 }
 
+class ChartPoint {
+  final String period;
+  final double buyTotal;
+  final double sellTotal;
+
+  ChartPoint({
+    required this.period,
+    required this.buyTotal,
+    required this.sellTotal,
+  });
+
+  factory ChartPoint.fromJson(Map<String, dynamic> json) {
+    return ChartPoint(
+      period: json["period"],
+      buyTotal: (json["buy_total"] as num).toDouble(),
+      sellTotal: (json["sell_total"] as num).toDouble(),
+    );
+  }
+}
+
 class TransactionProvider with ChangeNotifier {
   List<AppTransaction> _transactions = [];
   List<PortfolioAsset> _portfolioAssets = [];
   double _totalPortfolioValue = 0;
   double _totalProfitLoss = 0;
+
+  List<ChartPoint> _chartData = [];
+  String _chartPeriod = "daily";
 
   bool _isLoading = false;
   String? _errorMessage;
@@ -48,6 +71,8 @@ class TransactionProvider with ChangeNotifier {
   List<PortfolioAsset> get portfolioAssets => _portfolioAssets;
   double get totalPortfolioValue => _totalPortfolioValue;
   double get totalProfitLoss => _totalProfitLoss;
+  List<ChartPoint> get chartData => _chartData;
+  String get chartPeriod => _chartPeriod;
   bool get isLoading => _isLoading;
   String? get errorMessage => _errorMessage;
 
@@ -93,6 +118,23 @@ class TransactionProvider with ChangeNotifier {
           .toList();
       _totalPortfolioValue = (result["total_portfolio_value"] as num).toDouble();
       _totalProfitLoss = (result["total_realized_profit_loss"] as num).toDouble();
+      notifyListeners();
+    } on ApiException catch (e) {
+      _errorMessage = e.message;
+      notifyListeners();
+    }
+  }
+
+  Future<void> fetchChartData({String period = "daily"}) async {
+    _chartPeriod = period;
+    try {
+      final uri = Uri.parse(ApiConstants.chartSummary)
+          .replace(queryParameters: {"period": period});
+      final result = await ApiClient.get(uri.toString());
+
+      _chartData = (result["data"] as List)
+          .map((json) => ChartPoint.fromJson(json))
+          .toList();
       notifyListeners();
     } on ApiException catch (e) {
       _errorMessage = e.message;
