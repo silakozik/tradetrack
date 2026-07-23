@@ -6,6 +6,7 @@ import '../../providers/auth_provider.dart';
 import '../../providers/transaction_provider.dart';
 import '../transactions/transaction_list_screen.dart';
 import '../transactions/add_transaction_screen.dart';
+import '../charts/chart_screen.dart';
 
 class HomeScreen extends StatefulWidget {
   const HomeScreen({super.key});
@@ -76,16 +77,27 @@ class _HomeScreenState extends State<HomeScreen> {
       ),
       bottomNavigationBar: BottomAppBar(
         child: Row(
-          mainAxisAlignment: MainAxisAlignment.center,
+          mainAxisAlignment: MainAxisAlignment.spaceEvenly,
           children: [
             TextButton.icon(
               onPressed: () {
                 Navigator.of(context).push(
-                  MaterialPageRoute(builder: (_) => const TransactionListScreen()),
+                  MaterialPageRoute(
+                    builder: (_) => const TransactionListScreen(),
+                  ),
                 );
               },
               icon: const Icon(Icons.list),
               label: const Text("Tüm İşlemler"),
+            ),
+            TextButton.icon(
+              onPressed: () {
+                Navigator.of(
+                  context,
+                ).push(MaterialPageRoute(builder: (_) => const ChartScreen()));
+              },
+              icon: const Icon(Icons.bar_chart),
+              label: const Text("Grafik"),
             ),
           ],
         ),
@@ -110,9 +122,9 @@ class _HomeScreenState extends State<HomeScreen> {
             const SizedBox(height: 4),
             Text(
               _currencyFormat.format(txProvider.totalPortfolioValue),
-              style: Theme.of(context).textTheme.headlineMedium?.copyWith(
-                    fontWeight: FontWeight.bold,
-                  ),
+              style: Theme.of(
+                context,
+              ).textTheme.headlineMedium?.copyWith(fontWeight: FontWeight.bold),
             ),
             const SizedBox(height: 16),
             Row(
@@ -144,7 +156,10 @@ class _HomeScreenState extends State<HomeScreen> {
     return Card(
       margin: const EdgeInsets.only(bottom: 8),
       child: ListTile(
-        title: Text(asset.assetName, style: const TextStyle(fontWeight: FontWeight.w600)),
+        title: Text(
+          asset.assetName,
+          style: const TextStyle(fontWeight: FontWeight.w600),
+        ),
         subtitle: Text(
           "Miktar: ${asset.remainingQuantity} • Ort. Alış: ${_currencyFormat.format(asset.avgBuyPrice)}",
         ),
